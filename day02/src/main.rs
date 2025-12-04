@@ -43,18 +43,51 @@ fn find_palindrom_numbers_part1(ranges: Vec<Range>) -> u64 {
     res
 }
 
+fn find_repeated_numbers_part2(ranges: Vec<Range>) -> u64 {
+    let mut res = 0;
+
+    for range in ranges {
+        for i in range.lower..=range.upper {
+            let string_num = i.to_string();
+            let num_len = string_num.len();
+            let max_len = num_len / 2;
+            for l in 1..=max_len {
+                let substr = &string_num[0..l];
+                if num_len % l == 0 {
+                    let rest_of_string = substr.repeat(num_len / l - 1);
+                    if &string_num[l..] == rest_of_string {
+                        res += i;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    res
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn is_working_with_test_input() {
+    fn is_part1_working_with_test_input() {
         let ranges = read_ranges("input_test");
         assert_eq!(find_palindrom_numbers_part1(ranges), 1227775554);
+    }
+
+    #[test]
+    fn is_part2_working_with_test_input() {
+        let ranges = read_ranges("input_test");
+        assert_eq!(find_repeated_numbers_part2(ranges), 4174379265);
     }
 }
 
 fn main() {
     let ranges = read_ranges("day02/input");
-    println!("Result: {}", find_palindrom_numbers_part1(ranges));
+    println!("Result (part 1): {}", find_palindrom_numbers_part1(ranges));
+
+    let ranges = read_ranges("day02/input");
+    println!("Result (part 2): {}", find_repeated_numbers_part2(ranges));
 }
