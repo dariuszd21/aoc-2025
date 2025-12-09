@@ -26,47 +26,50 @@ fn load_tiles(filename: &str) -> Vec<Vec<Tile>> {
     tiles
 }
 
+fn is_movable(i: usize, j: usize, num_cols: usize, tile: &Tile, tiles: &Vec<Vec<Tile>>) -> bool {
+    match tile {
+        Tile::Empty => false,
+        Tile::Roll => {
+            let mut rolls = 0;
+            let left_bound = if j > 0 { j - 1 } else { 0 };
+            let right_bound = if j < num_cols - 2 {
+                j + 1
+            } else {
+                num_cols - 1
+            };
+            let lower_bound = if i > 0 { i - 1 } else { 0 };
+            let upper_bound = if i < tiles.len() - 2 {
+                i + 1
+            } else {
+                tiles.len() - 1
+            };
+            for i_nb in lower_bound..=upper_bound {
+                for j_nb in left_bound..=right_bound {
+                    if i_nb == i && j_nb == j {
+                        continue;
+                    }
+                    if let Some(other_row) = tiles.get(i_nb) {
+                        if let Some(tile) = other_row.get(j_nb) {
+                            match tile {
+                                Tile::Empty => (),
+                                Tile::Roll => rolls += 1,
+                            }
+                        }
+                    }
+                }
+            }
+            rolls < 4
+        }
+    }
+}
+
 fn find_accessible(tiles: Vec<Vec<Tile>>) -> u64 {
     let mut res = 0;
 
     for (i, row) in tiles.iter().enumerate() {
         for (j, tile) in row.iter().enumerate() {
-            match tile {
-                Tile::Empty => {}
-                Tile::Roll => {
-                    let mut rolls = 0;
-                    let left_bound = if j > 0 { j - 1 } else { 0 };
-                    let right_bound = if j < row.len() - 2 {
-                        j + 1
-                    } else {
-                        row.len() - 1
-                    };
-                    let lower_bound = if i > 0 { i - 1 } else { 0 };
-                    let upper_bound = if i < tiles.len() - 2 {
-                        i + 1
-                    } else {
-                        tiles.len() - 1
-                    };
-                    for i_nb in lower_bound..=upper_bound {
-                        for j_nb in left_bound..=right_bound {
-                            if i_nb == i && j_nb == j {
-                                continue;
-                            }
-                            if let Some(other_row) = tiles.get(i_nb) {
-                                if let Some(tile) = other_row.get(j_nb) {
-                                    match tile {
-                                        Tile::Empty => (),
-                                        Tile::Roll => rolls += 1,
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if rolls < 4 {
-                        println!("Found {} {}", i, j);
-                        res += 1;
-                    }
-                }
+            if is_movable(i, j, row.len(), &tile, &tiles) {
+                res += 1;
             }
         }
     }
