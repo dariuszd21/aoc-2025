@@ -1,6 +1,6 @@
 use utils;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Tile {
     Empty,
     Roll,
@@ -64,17 +64,51 @@ fn is_movable(i: usize, j: usize, num_cols: usize, tile: &Tile, tiles: &Vec<Vec<
 }
 
 fn find_accessible(tiles: Vec<Vec<Tile>>) -> u64 {
+    let (res, _) = move_iteration(tiles);
+    res
+}
+
+fn move_until_can(tiles: Vec<Vec<Tile>>) -> u64 {
     let mut res = 0;
 
-    for (i, row) in tiles.iter().enumerate() {
-        for (j, tile) in row.iter().enumerate() {
-            if is_movable(i, j, row.len(), &tile, &tiles) {
-                res += 1;
-            }
+    let mut it_res;
+    let mut new_tiles = tiles.to_vec();
+
+    loop {
+        (it_res, new_tiles) = move_iteration(new_tiles);
+
+        if it_res == 0 {
+            break;
         }
+        res += it_res;
     }
 
     res
+}
+
+fn move_iteration(tiles: Vec<Vec<Tile>>) -> (u64, Vec<Vec<Tile>>) {
+    let mut res = 0;
+    let mut next_it = Vec::new();
+
+    for (i, row) in tiles.iter().enumerate() {
+        let mut new_row = Vec::new();
+        for (j, tile) in row.iter().enumerate() {
+            match tile {
+                Tile::Empty => new_row.push(Tile::Empty),
+                Tile::Roll => {
+                    if is_movable(i, j, row.len(), &tile, &tiles) {
+                        res += 1;
+                        new_row.push(Tile::Empty);
+                    } else {
+                        new_row.push(Tile::Roll);
+                    }
+                }
+            }
+        }
+        next_it.push(new_row);
+    }
+
+    (res, next_it)
 }
 
 #[cfg(test)]
@@ -88,10 +122,16 @@ mod tests {
     }
 
     #[test]
-    fn is_part2_working_with_test_input() {}
+    fn is_part2_working_with_test_input() {
+        let tiles = load_tiles("input_test");
+        assert_eq!(move_until_can(tiles), 43);
+    }
 }
 
 fn main() {
     let tiles = load_tiles("day04/input");
     println!("Result: {}", find_accessible(tiles));
+
+    let tiles = load_tiles("day04/input");
+    println!("Result: {}", move_until_can(tiles));
 }
