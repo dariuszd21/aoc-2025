@@ -29,9 +29,7 @@ fn load_tiles(filename: &str) -> Vec<Vec<Tile>> {
     tiles
 }
 
-fn calculate_splits(tiles: Vec<Vec<Tile>>) -> usize {
-    let mut res = 0;
-
+fn release_beams(tiles: Vec<Vec<Tile>>) -> Vec<Vec<Tile>> {
     let mut tiles_after_beam_passes: Vec<Vec<Tile>> = Vec::new();
     tiles_after_beam_passes.push(tiles[0].clone());
 
@@ -63,6 +61,13 @@ fn calculate_splits(tiles: Vec<Vec<Tile>>) -> usize {
         }
         tiles_after_beam_passes.push(tiles_row_after_beam);
     }
+    tiles_after_beam_passes
+}
+
+fn calculate_splits(tiles: Vec<Vec<Tile>>) -> usize {
+    let mut res = 0;
+
+    let mut tiles_after_beam_passes = release_beams(tiles);
 
     tiles_after_beam_passes.reverse();
     for (i, tile_row) in tiles_after_beam_passes[1..tiles_after_beam_passes.len()]
@@ -86,6 +91,45 @@ fn calculate_splits(tiles: Vec<Vec<Tile>>) -> usize {
     res
 }
 
+fn calculate_beam_paths(tiles: Vec<Vec<Tile>>) -> u64 {
+    let tiles_after_beam_passes = release_beams(tiles);
+
+    let mut paths: Vec<Vec<u64>> = Vec::new();
+
+    for (i, tile_row) in tiles_after_beam_passes.iter().enumerate() {
+        let mut paths_row = vec![0; tile_row.len()];
+
+        for (j, tile) in tile_row.iter().enumerate() {
+            match tile {
+                Tile::Empty => (),
+                Tile::Start => paths_row[j] = 1,
+                Tile::Splitter => (),
+                Tile::Beam => {
+                    if tiles_after_beam_passes[i - 1][j] == Tile::Beam
+                        || tiles_after_beam_passes[i - 1][j] == Tile::Start
+                    {
+                        paths_row[j] += paths[i - 1][j];
+                    }
+                    if j > 0 && tile_row[j - 1] == Tile::Splitter {
+                        paths_row[j] += paths[i - 1][j - 1];
+                    }
+                    if j < tile_row.len() - 1 && tile_row[j + 1] == Tile::Splitter {
+                        paths_row[j] += paths[i - 1][j + 1];
+                    }
+                }
+            }
+        }
+
+        paths.push(paths_row);
+    }
+
+    if let Some(paths_row) = paths.last() {
+        paths_row.iter().sum()
+    } else {
+        0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -99,9 +143,13 @@ mod tests {
     #[test]
     fn is_part2_working_with_test_input() {
         let tiles = load_tiles("input_test");
+        assert_eq!(calculate_beam_paths(tiles), 40);
     }
 }
 fn main() {
     let tiles = load_tiles("day07/input");
     println!("Result {}", calculate_splits(tiles));
+
+    let tiles = load_tiles("day07/input");
+    println!("Result {}", calculate_beam_paths(tiles));
 }
